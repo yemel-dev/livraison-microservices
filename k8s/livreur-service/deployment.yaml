@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: livreur-service
+  namespace: livraison
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: livreur-service
+
+  template:
+    metadata:
+      labels:
+        app: livreur-service
+
+    spec:
+      containers:
+        - name: livreur-service
+          image: livraison/livreur-service:1.0
+
+          ports:
+            - containerPort: 8083
+
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: livreur-service-secret
+                  key: db-username
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: livreur-service-secret
+                  key: db-password
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: livreur-service-secret
+                  key: jwt-secret
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: livreur-service
+  namespace: livraison
+
+spec:
+  selector:
+    app: livreur-service
+
+  ports:
+    - port: 8083
+      targetPort: 8083
+
+  type: ClusterIP

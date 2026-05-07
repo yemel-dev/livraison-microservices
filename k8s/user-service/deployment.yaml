@@ -1,0 +1,54 @@
+# Un Deployment dit à Kubernetes : "fais tourner ce service en permanence"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: livraison   # Un espace de noms pour isoler notre projet
+spec:
+  replicas: 2            # On veut 2 copies du service (haute disponibilité)
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: livraison/user-service:1.0   # L'image Docker à déployer
+          ports:
+            - containerPort: 8081
+          env:
+            # Les vrais secrets viennent du Secret K8s, jamais du code
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: user-service-secret
+                  key: db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: user-service-secret
+                  key: db-password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: user-service-secret
+                  key: jwt-secret
+
+---
+# Un Service K8s donne un nom DNS stable au Deployment
+# Les autres services appellent "user-service:8081" sans connaître l'IP exacte
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: livraison
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 8081
+      targetPort: 8081
+  type: ClusterIP   # Uniquement accessible à l'intérieur du cluster (Zero Trust)

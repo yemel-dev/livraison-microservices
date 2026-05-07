@@ -1,0 +1,9 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: notification-service
+jwt:
+  secret: ${JWT_SECRET:dev-secret-key-changer-en-production-minimum-32-chars}
+  expiration: 86400000

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: colis-service
+  namespace: livraison
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: colis-service
+
+  template:
+    metadata:
+      labels:
+        app: colis-service
+
+    spec:
+      containers:
+        - name: colis-service
+          image: livraison/colis-service:1.0
+
+          ports:
+            - containerPort: 8082
+
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: colis-service-secret
+                  key: db-username
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: colis-service-secret
+                  key: db-password
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: colis-service-secret
+                  key: jwt-secret
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: colis-service
+  namespace: livraison
+
+spec:
+  selector:
+    app: colis-service
+
+  ports:
+    - port: 8082
+      targetPort: 8082
+
+  type: ClusterIP
