@@ -4,16 +4,47 @@ server:
 spring:
   application:
     name: livreur-service
+
   datasource:
-    url: jdbc:mysql://localhost:3308/users_db
+    # ✅ Port 3308 correct (docker-compose du projet)
+    # ❌ users_db → à changer en livreurs_db (car c'est le service livreur)
+    url: jdbc:mysql://localhost:3308/livreurs_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
 
+  # ✅ Kafka manquait complètement — à ajouter
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+        max.block.ms: 3000
+        delivery.timeout.ms: 5000
+        request.timeout.ms: 3000
+
+# ✅ Secret JWT aligné avec le projet (même valeur que les autres services)
 jwt:
   secret: ${JWT_SECRET:dev-secret-key-changer-en-production-minimum-32-chars}
   expiration: 86400000
+
+# ✅ Topics Kafka manquaient
+kafka:
+  topics:
+    livraison-done: livraison.done
+    colis-status-changed: colis.status_changed
+
+logging:
+  level:
+    com.livraison.livreur: DEBUG
+    org.springframework.kafka: WARN
