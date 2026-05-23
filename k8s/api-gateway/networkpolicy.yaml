@@ -1,0 +1,58 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-gateway-netpol
+  namespace: livraison
+  labels:
+    app: api-gateway
+spec:
+  # S'applique uniquement aux pods api-gateway
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+    - Ingress
+    - Egress
+
+  # ── INGRESS ── Qui peut appeler le Gateway ?
+  ingress:
+    # Tout trafic externe sur port 8080 (navigateur, mobile)
+    - ports:
+        - port: 8080
+          protocol: TCP
+
+  # ── EGRESS ── Zero Trust : le Gateway ne parle qu'aux 3 services autorisés
+  egress:
+    # User Service — authentification JWT
+    - to:
+        - podSelector:
+            matchLabels:
+              app: user-service
+      ports:
+        - port: 8081
+          protocol: TCP
+
+    # Colis Service — gestion des colis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: colis-service
+      ports:
+        - port: 8082
+          protocol: TCP
+
+    # Livreur Service — gestion des livreurs
+    - to:
+        - podSelector:
+            matchLabels:
+              app: livreur-service
+      ports:
+        - port: 8083
+          protocol: TCP
+
+    # DNS — obligatoire pour résoudre les noms K8s (user-service, colis-service...)
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP

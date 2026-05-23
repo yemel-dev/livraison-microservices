@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: livraison
+  labels:
+    app: api-gateway
+data:
+  # URLs des services en aval (non sensibles)
+  USER_SERVICE_URL: "http://user-service:8081"
+  COLIS_SERVICE_URL: "http://colis-service:8082"
+  LIVREUR_SERVICE_URL: "http://livreur-service:8083"
+
+  # Chemins publics — aucun token JWT requis
+  # Format virgule : compatible avec @Value Spring
+  public-paths: "/api/auth/login,/api/auth/register,/actuator/health"
+
+  # Paramètres du rate limiting
+  RATE_LIMIT_MAX_REQUESTS: "100"
+  RATE_LIMIT_WINDOW_MS: "60000"
