@@ -1,9 +1,51 @@
+# ─────────────────────────────────────────
+# PORT DU SERVICE
+# Notre notification-service tourne sur 8084
+# ─────────────────────────────────────────
 server:
   port: 8084
 
 spring:
   application:
+    # Nom du service — utilisé par Kafka pour s'identifier
     name: notification-service
-jwt:
-  secret: ${JWT_SECRET:dev-secret-key-changer-en-production-minimum-32-chars}
-  expiration: 86400000
+
+  # ─────────────────────────────────────────
+  # CONFIGURATION KAFKA
+  # ─────────────────────────────────────────
+  kafka:
+
+    # Adresse du serveur Kafka
+    # En développement : localhost:9092
+    # En production Kubernetes : kafka-service:9092
+    bootstrap-servers: localhost:9092
+
+    consumer:
+      # Identifiant de notre groupe de consommateurs
+      # Kafka sait que tous les consumers avec ce group-id
+      # font partie du même service → pas de doublons
+      group-id: notification-group
+
+      # Que faire si ce service démarre pour la première fois
+      # et qu'il n'a jamais lu les messages Kafka ?
+      # "earliest" = relire TOUS les messages depuis le début
+      # "latest"   = lire uniquement les nouveaux messages
+      auto-offset-reset: earliest
+
+      # Format des messages qu'on reçoit :
+      # La clé du message est une String
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+      # La valeur du message est aussi une String (JSON)
+      # On va convertir ce JSON en objet Java nous-mêmes
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+# ─────────────────────────────────────────
+# LOGS — Pour voir ce qui se passe
+# ─────────────────────────────────────────
+logging:
+  level:
+    # Affiche tous les logs de notre code
+    com.livraison.notification: DEBUG
+    # Affiche les logs Kafka (connexion, réception messages)
+    org.springframework.kafka: INFO
