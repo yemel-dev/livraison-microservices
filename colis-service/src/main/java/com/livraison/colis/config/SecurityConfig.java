@@ -1,49 +1,56 @@
 package com.livraison.colis.config;
 
+import com.livraison.colis.security.HeaderAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Configuration Spring Security TEMPORAIRE.
+ * Configuration Spring Security — Zero Trust finale.
  *
- * ⚠️  Cette configuration autorise toutes les requêtes sans authentification.
- *     Elle sera REMPLACÉE à l'Étape 14 par la vraie config Zero Trust
- *     avec HeaderAuthenticationFilter.
+ * Remplace la SecurityConfig temporaire de l'étape précédente.
  *
- * Pourquoi elle est nécessaire maintenant :
- * - spring-boot-starter-security bloque tout par défaut (401 sur chaque requête)
- * - On veut tester le CRUD avant d'implémenter la sécurité
+ * Principes appliqués :
+ * 1. Stateless   → aucune session HTTP côté serveur
+ * 2. CSRF off    → API REST pure, pas de formulaires
+ * 3. Zero Trust  → chaque requête doit porter X-User-Id + X-User-Role
+ * 4. RBAC        → les droits fins sont vérifiés dans le service
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Désactiver CSRF : API REST stateless, pas de formulaires HTML
             .csrf(AbstractHttpConfigurer::disable)
 
-            // Pas de session HTTP côté serveur (stateless)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
-            // TODO Étape 14 — Remplacer par les vraies règles RBAC :
-            // .authorizeHttpRequests(auth -> auth
-            //     .requestMatchers("/api/colis/suivi/**").permitAll()
-            //     .anyRequest().authenticated()
-            // )
-            // + addFilterBefore(headerAuthFilter, ...)
-
-            // Pour l'instant : tout autoriser sans authentification
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
+                // Actuator accessible sans auth (pour les probes K8s)
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                // Tout le reste nécessite X-User-Id + X-User-Role valides
+                .anyRequest().authenticated()
+            )
+
+            // Notre filtre Zero Trust s'exécute avant le filtre standard Spring
+            .addFilterBefore(
+                headerAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class
             );
 
         return http.build();
