@@ -1,29 +1,36 @@
-# ÉTAPE 1 : on utilise une image Maven pour compiler le code
-# "builder" est juste un nom qu'on donne à cette étape
+# ─── Stage 1 : Build ─────────────────────────────────────────────────────────
+# On utilise Maven + JDK pour compiler et packager le JAR
 FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /app
 
-# On copie d'abord le pom.xml pour profiter du cache Docker
-# (si le code change mais pas les dépendances, Maven ne les retélécharge pas)
+# Copier le pom.xml en premier pour profiter du cache Docker :
+# si seul le code change (pas les dépendances), Maven ne retélécharge rien
 COPY pom.xml .
 RUN mvn dependency:go-offline -q
 
-# Ensuite on copie le code source et on compile
+# Copier le code source et compiler
 COPY src ./src
 RUN mvn clean package -DskipTests -q
 
-# ÉTAPE 2 : image finale légère, sans Maven ni code source
-# On prend juste le JRE (Java Runtime) pour exécuter le JAR
+# ─── Stage 2 : Runtime ───────────────────────────────────────────────────────
+# Image finale légère : JRE uniquement (pas de Maven, pas de code source)
+# eclipse-temurin:21-jre-alpine ≈ 200MB vs ≈ 700MB pour le stage builder
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# On récupère uniquement le JAR compilé depuis l'étape builder
+# Récupérer uniquement le JAR compilé depuis le stage builder
 COPY --from=builder /app/target/*.jar app.jar
 
-# Le port que ce service expose
+# Port exposé par le service
 EXPOSE 8082
 
-# La commande qui démarre le service
+# Variables d'environnement avec valeurs par défaut (surchargées par docker-compose/K8s)
+ENV DB_USERNAME=root
+ENV DB_PASSWORD=root
+ENV SPRING_DATASOURCE_URL=jdbc:mysql://mysql-colis:3306/colis_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+ENV SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+
+# Démarrer le service
 ENTRYPOINT ["java", "-jar", "app.jar"]

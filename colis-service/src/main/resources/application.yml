@@ -13,12 +13,13 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update       # En dev : crée/met à jour le schéma automatiquement
-    show-sql: true           # Affiche les requêtes SQL en console (pratique en dev)
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false        # Supprime le warning "open-in-view is enabled by default"
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        # MySQL8Dialect déprécié → on laisse Hibernate le détecter automatiquement
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -26,7 +27,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.add.type.headers: false   # Évite les problèmes de désérialisation côté consommateur
+        spring.json.add.type.headers: false
 
 logging:
   level:
