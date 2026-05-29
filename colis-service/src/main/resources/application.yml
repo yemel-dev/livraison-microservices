@@ -4,16 +4,42 @@ server:
 spring:
   application:
     name: colis-service
+
   datasource:
-    url: jdbc:mysql://localhost:3307/users_db
+    url: jdbc:mysql://localhost:3307/colis_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
 
-jwt:
-  secret: ${JWT_SECRET:dev-secret-key-changer-en-production-minimum-32-chars}
-  expiration: 86400000
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+# Configuration Swagger / OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+    display-request-duration: true
+    try-it-out-enabled: true    # Permet de tester directement depuis Swagger UI
+
+logging:
+  level:
+    com.livraison.colis: DEBUG
+    org.hibernate.SQL: DEBUG
