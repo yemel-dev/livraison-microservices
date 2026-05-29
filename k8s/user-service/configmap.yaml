@@ -1,0 +1,22 @@
+# ConfigMap — configuration non sensible du User Service
+# Visible par tous — ne jamais mettre de mots de passe ici
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  namespace: livraison
+  labels:
+    app: user-service
+data:
+  # URL JDBC vers le conteneur MySQL dans le cluster
+  SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-users:3306/users_db?createDatabaseIfNotExist=true"
+
+  # Port du service
+  SERVER_PORT: "8081"
+
+  # JPA — update crée/modifie les tables automatiquement
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+
+  # false en production — true uniquement en développement
+  SPRING_JPA_SHOW_SQL: "false"

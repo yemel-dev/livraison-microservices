@@ -1,14 +1,27 @@
-# Un Deployment dit à Kubernetes : "fais tourner ce service en permanence"
+# Deployment — dit à Kubernetes comment déployer le User Service
+# 2 replicas = haute disponibilité — si un pod tombe, l'autre prend le relais
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: user-service
-  namespace: livraison   # Un espace de noms pour isoler notre projet
+  namespace: livraison
+  labels:
+    app: user-service
+    version: "1.0"
 spec:
-  replicas: 2            # On veut 2 copies du service (haute disponibilité)
+  replicas: 2
   selector:
     matchLabels:
       app: user-service
+
+  # Rolling update — zéro downtime lors des déploiements
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # 1 pod supplémentaire pendant la mise à jour
+      maxUnavailable: 0  # aucun pod indisponible pendant la mise à jour
+
   template:
     metadata:
       labels:
@@ -16,11 +29,12 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: livraison/user-service:1.0   # L'image Docker à déployer
+          image: livraison/user-service:1.0
           ports:
             - containerPort: 8081
+
+          # Variables sensibles depuis le Secret
           env:
-            # Les vrais secrets viennent du Secret K8s, jamais du code
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -37,18 +51,55 @@ spec:
                   name: user-service-secret
                   key: jwt-secret
 
+          # Variables non sensibles depuis le ConfigMap
+          envFrom:
+            - configMapRef:
+                name: user-service-config
+
+          # Limites de ressources — évite qu'un pod consomme tout le nœud
+          resources:
+            requests:
+              memory: "256Mi"  # mémoire garantie au démarrage
+              cpu: "200m"      # 0.2 CPU garanti
+            limits:
+              memory: "512Mi"  # mémoire maximum
+              cpu: "500m"      # 0.5 CPU maximum
+
+          # Readiness probe — K8s n'envoie du trafic que si ce check réussit
+          # Pendant le démarrage Spring Boot, le pod n'est pas dans le load balancer
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 30  # attendre 30s le démarrage Spring Boot
+            periodSeconds: 10        # vérifier toutes les 10s
+            failureThreshold: 3      # 3 échecs → retrait du load balancer
+
+          # Liveness probe — K8s redémarre le pod si ce check échoue
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 60  # attendre 60s avant le premier check
+            periodSeconds: 30        # vérifier toutes les 30s
+            failureThreshold: 3      # 3 échecs consécutifs → redémarrage
+
 ---
-# Un Service K8s donne un nom DNS stable au Deployment
-# Les autres services appellent "user-service:8081" sans connaître l'IP exacte
+# Service K8s — donne un nom DNS stable au Deployment
+# Les autres pods appellent "user-service:8081" sans connaître l'IP exacte
+
 apiVersion: v1
 kind: Service
 metadata:
   name: user-service
   namespace: livraison
+  labels:
+    app: user-service
 spec:
   selector:
     app: user-service
   ports:
     - port: 8081
       targetPort: 8081
-  type: ClusterIP   # Uniquement accessible à l'intérieur du cluster (Zero Trust)
+      protocol: TCP
+  type: ClusterIP  # Accessible uniquement dans le cluster (Zero Trust)

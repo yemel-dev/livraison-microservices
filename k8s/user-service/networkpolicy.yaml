@@ -1,0 +1,49 @@
+# NetworkPolicy — Zero Trust réseau
+# Sans ce fichier : n'importe quel pod peut appeler le User Service
+# Avec ce fichier : SEUL le Gateway peut envoyer du trafic au User Service
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: user-service-netpol
+  namespace: livraison
+  labels:
+    app: user-service
+spec:
+  # Cette politique s'applique aux pods user-service
+  podSelector:
+    matchLabels:
+      app: user-service
+
+  policyTypes:
+    - Ingress   # Contrôle le trafic ENTRANT vers user-service
+    - Egress    # Contrôle le trafic SORTANT depuis user-service
+
+  # ── INGRESS ── Qui peut appeler le User Service ?
+  ingress:
+    # UNIQUEMENT le Gateway — Zero Trust strict
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway  # Seul le Gateway est autorisé
+      ports:
+        - port: 8081
+          protocol: TCP
+
+  # ── EGRESS ── Vers où le User Service peut-il appeler ?
+  egress:
+    # Base de données MySQL uniquement
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mysql-users
+      ports:
+        - port: 3306
+          protocol: TCP
+
+    # DNS — obligatoire pour résoudre les noms dans le cluster
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
