@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: livreur-service-config
+  namespace: livraison
+  labels:
+    app: livreur-service
+data:
+  # URL de la base de données MySQL (non sensible)
+  DB_URL: "jdbc:mysql://mysql-livreur:3308/livreurs_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+
+  # Adresse du broker Kafka
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+
+  # Topics Kafka utilisés par ce service
+  KAFKA_TOPIC_LIVRAISON_DONE: "livraison.done"
+  KAFKA_TOPIC_COLIS_STATUS_CHANGED: "colis.status_changed"
+
+  # Niveau de log
+  LOG_LEVEL: "INFO"

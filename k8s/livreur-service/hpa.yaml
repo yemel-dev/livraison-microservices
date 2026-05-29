@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: livreur-service-secret
+  namespace: livraison
+  labels:
+    app: livreur-service
+# Opaque = secret générique clé/valeur encodé en base64
+type: Opaque
+data:
+  # Valeur : "root"
+  # Encodée en base64 : echo -n "root" | base64
+  db-username: cm9vdA==
+
+  # Valeur : "root"
+  # Encodée en base64 : echo -n "root" | base64
+  db-password: cm9vdA==
+
+  # Valeur : "dev-secret-key-changer-en-production-minimum-32-chars"
+  # Encodée en base64 : echo -n "valeur" | base64
+  jwt-secret: ZGV2LXNlY3JldC1rZXktY2hhbmdlci1lbi1wcm9kdWN0aW9uLW1pbmltdW0tMzItY2hhcnM=
+
+# ⚠️  NE JAMAIS pousser ce fichier sur GitHub
+# Ajouter dans .gitignore : k8s/*/secret.yaml
+# En production, créer via :
+#   kubectl create secret generic livreur-service-secret \
+#     --from-literal=db-username=VOTRE_USER \
+#     --from-literal=db-password=VOTRE_PASSWORD \
+#     --from-literal=jwt-secret=VOTRE_SECRET_FORT \
+#     --namespace=livraison
