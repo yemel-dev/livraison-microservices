@@ -15,11 +15,10 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
-    open-in-view: false        # Supprime le warning "open-in-view is enabled by default"
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
-        # MySQL8Dialect déprécié → on laisse Hibernate le détecter automatiquement
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -28,6 +27,17 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.add.type.headers: false
+
+# Configuration Swagger / OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+    display-request-duration: true
+    try-it-out-enabled: true    # Permet de tester directement depuis Swagger UI
 
 logging:
   level:

@@ -21,10 +21,14 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
     private static final String HEADER_USER_ID   = "X-User-Id";
     private static final String HEADER_USER_ROLE = "X-User-Role";
 
-    // Endpoints publics qui ne nécessitent pas d'authentification
+    // Endpoints accessibles sans headers d'authentification
     private static final List<String> PUBLIC_PATHS = List.of(
         "/actuator/health",
-        "/actuator/info"
+        "/actuator/info",
+        "/swagger-ui",          // Swagger UI
+        "/v3/api-docs",         // JSON OpenAPI
+        "/swagger-resources",
+        "/webjars"
     );
 
     @Override
@@ -35,7 +39,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
 
-        // Laisser passer les endpoints publics sans vérification
+        // Laisser passer les endpoints publics
         if (PUBLIC_PATHS.stream().anyMatch(uri::startsWith)) {
             filterChain.doFilter(request, response);
             return;

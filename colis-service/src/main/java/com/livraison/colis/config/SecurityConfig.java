@@ -12,17 +12,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * Configuration Spring Security — Zero Trust finale.
- *
- * Remplace la SecurityConfig temporaire de l'étape précédente.
- *
- * Principes appliqués :
- * 1. Stateless   → aucune session HTTP côté serveur
- * 2. CSRF off    → API REST pure, pas de formulaires
- * 3. Zero Trust  → chaque requête doit porter X-User-Id + X-User-Role
- * 4. RBAC        → les droits fins sont vérifiés dans le service
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -35,19 +24,24 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-
             .authorizeHttpRequests(auth -> auth
-                // Actuator accessible sans auth (pour les probes K8s)
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                // Tout le reste nécessite X-User-Id + X-User-Role valides
+                // Endpoints publics — pas besoin de headers
+                .requestMatchers(
+                    "/actuator/health",
+                    "/actuator/info",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs",
+                    "/v3/api-docs/**",
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll()
+                // Tout le reste nécessite d'avoir passé le filtre Zero Trust
                 .anyRequest().authenticated()
             )
-
-            // Notre filtre Zero Trust s'exécute avant le filtre standard Spring
             .addFilterBefore(
                 headerAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class

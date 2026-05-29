@@ -1,6 +1,7 @@
 package com.livraison.colis.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.livraison.colis.config.OpenApiConfig;
 import com.livraison.colis.config.SecurityConfig;
 import com.livraison.colis.dto.ColisRequestDTO;
 import com.livraison.colis.dto.ColisResponseDTO;
@@ -35,8 +36,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * On importe SecurityConfig + HeaderAuthenticationFilter pour tester
  * le vrai comportement de sécurité (401 sans headers, 403 sans droits).
+ *
+ * OpenApiConfig est exclu car SpringDoc scanne les beans au runtime
+ * et peut provoquer des erreurs dans le contexte de test allégé de @WebMvcTest.
  */
-@WebMvcTest(ColisController.class)
+@WebMvcTest(
+    controllers = ColisController.class,
+    excludeAutoConfiguration = {
+        // Exclure l'autoconfig SpringDoc pour éviter les conflits dans le contexte de test
+        org.springdoc.webmvc.ui.SwaggerConfig.class
+    }
+)
 @Import({SecurityConfig.class, HeaderAuthenticationFilter.class})
 @ActiveProfiles("test")
 @DisplayName("Tests REST — ColisController")
@@ -50,6 +60,11 @@ class ColisControllerTest {
 
     @MockBean
     private ColisService colisService;
+
+    // OpenApiConfig est mocké pour éviter que SpringDoc essaie de
+    // scanner les controllers dans un contexte incomplet
+    @MockBean
+    private OpenApiConfig openApiConfig;
 
     private ColisResponseDTO responseDTO;
     private ColisRequestDTO requestDTO;
@@ -119,7 +134,6 @@ class ColisControllerTest {
                     .expediteurEmail("alice@email.com")
                     .destinataireNom("Bob")
                     .destinataireAdresse("5 avenue de Lyon")
-                    // poids manquant → @NotNull doit échouer
                     .optionService(OptionService.EXPRESS)
                     .build();
 
@@ -194,7 +208,7 @@ class ColisControllerTest {
     class GetAllColisTests {
 
         @Test
-        @DisplayName("liste des colis → 200 OK avec liste")
+        @DisplayName("liste des colis → 200 OK")
         void shouldReturnListOf200() throws Exception {
             when(colisService.getAllColis(1L, "ROLE_CLIENT")).thenReturn(List.of(responseDTO));
 
