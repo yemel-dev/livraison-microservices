@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: livraison/notification-service:1.0
+          image: yemeldev/notification-service:1.0
 
           ports:
             - containerPort: 8084

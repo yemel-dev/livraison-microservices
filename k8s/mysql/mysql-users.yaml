@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-users
+  namespace: livraison
+spec:
+  selector:
+    matchLabels:
+      app: mysql-users
+  serviceName: mysql-users
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mysql-users
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: root
+            - name: MYSQL_DATABASE
+              value: users_db
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-users
+  namespace: livraison
+spec:
+  selector:
+    app: mysql-users
+  ports:
+    - port: 3306
+      targetPort: 3306
+  clusterIP: None

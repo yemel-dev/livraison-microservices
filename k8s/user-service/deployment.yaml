@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: livraison/user-service:1.0
+          image: yemeldev/user-service:1.0
           ports:
             - containerPort: 8081
 

@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: livreur-service
-          image: livraison/livreur-service:1.0
+          image: yemeldev/livreur-service:1.0
           ports:
             - containerPort: 8083
           env:

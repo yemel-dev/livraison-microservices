@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: colis-service
-          image: colis-service:latest
+          image: yemeldev/colis-service:1.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082

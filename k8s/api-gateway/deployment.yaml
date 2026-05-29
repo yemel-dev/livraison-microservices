@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: livraison/api-gateway:1.0
+          image: yemeldev/api-gateway:1.0
           ports:
             - containerPort: 8080
           env:
