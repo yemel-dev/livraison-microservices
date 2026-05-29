@@ -23,13 +23,14 @@ public class LivreurService {
     private final LivreurRepository livreurRepository;
 
     // Créer un livreur
-
     public LivreurResponse creerLivreur(CreateLivreurRequest request) {
         if (livreurRepository.existsByTelephone(request.getTelephone())) {
             throw new IllegalStateException(
                     "Un livreur avec le téléphone " + request.getTelephone() + " existe déjà");
         }
+
         Livreur livreur = Livreur.builder()
+                .userId(request.getUserId())   // ← lien avec le user-service
                 .nom(request.getNom())
                 .prenom(request.getPrenom())
                 .telephone(request.getTelephone())
@@ -38,12 +39,12 @@ public class LivreurService {
                 .build();
 
         Livreur saved = livreurRepository.save(livreur);
-        log.info("[LIVREUR] Nouveau livreur créé : id={}, nom={}", saved.getId(), saved.getNom());
+        log.info("[LIVREUR] Nouveau livreur créé : id={}, userId={}, nom={}",
+                saved.getId(), saved.getUserId(), saved.getNom());
         return toResponse(saved);
     }
 
-    //  Lister tous les livreurs actifs
-
+    // Lister tous les livreurs actifs
     @Transactional(readOnly = true)
     public List<LivreurResponse> listerLivreursActifs() {
         return livreurRepository.findByActifTrue()
@@ -52,8 +53,7 @@ public class LivreurService {
                 .collect(Collectors.toList());
     }
 
-    //  Lister tous les livreurs (ADMIN)
-
+    // Lister tous les livreurs (ADMIN)
     @Transactional(readOnly = true)
     public List<LivreurResponse> listerTousLivreurs() {
         return livreurRepository.findAll()
@@ -62,15 +62,13 @@ public class LivreurService {
                 .collect(Collectors.toList());
     }
 
-    //  Obtenir un livreur par ID
-
+    // Obtenir un livreur par ID
     @Transactional(readOnly = true)
     public LivreurResponse getLivreurById(Long id) {
         return toResponse(findLivreurOuErreur(id));
     }
 
-    //  Mettre à jour un livreur
-
+    // Mettre à jour un livreur
     public LivreurResponse mettreAJourLivreur(Long id, UpdateLivreurRequest request) {
         Livreur livreur = findLivreurOuErreur(id);
 
@@ -89,8 +87,7 @@ public class LivreurService {
         return toResponse(livreurRepository.save(livreur));
     }
 
-    //  Activer / Désactiver un livreur
-
+    // Activer / Désactiver un livreur
     public LivreurResponse toggleActif(Long id) {
         Livreur livreur = findLivreurOuErreur(id);
         livreur.setActif(!livreur.isActif());
@@ -98,8 +95,7 @@ public class LivreurService {
         return toResponse(livreurRepository.save(livreur));
     }
 
-    //  Supprimer un livreur (soft delete via désactivation)
-
+    // Supprimer un livreur (soft delete)
     public void supprimerLivreur(Long id) {
         Livreur livreur = findLivreurOuErreur(id);
         livreur.setActif(false);
@@ -107,8 +103,7 @@ public class LivreurService {
         log.info("[LIVREUR] Livreur id={} désactivé (soft delete)", id);
     }
 
-    //  Helpers ─
-
+    // Helpers
     public Livreur findLivreurOuErreur(Long id) {
         return livreurRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -118,6 +113,7 @@ public class LivreurService {
     private LivreurResponse toResponse(Livreur livreur) {
         return LivreurResponse.builder()
                 .id(livreur.getId())
+                .userId(livreur.getUserId())
                 .nom(livreur.getNom())
                 .prenom(livreur.getPrenom())
                 .telephone(livreur.getTelephone())
@@ -125,5 +121,4 @@ public class LivreurService {
                 .actif(livreur.isActif())
                 .build();
     }
-
 }

@@ -1,6 +1,4 @@
 package com.livraison.livreur.dto;
-// ce que l'Api renvoir pour un livreur
-
 
 import lombok.*;
 
@@ -9,12 +7,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
-//ce que l'API renvoie pour une livraison
-
 public class LivreurResponse {
 
     private Long id;
+    private Long userId;   // ← lien avec le user-service
     private String nom;
     private String prenom;
     private String telephone;

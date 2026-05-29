@@ -1,7 +1,5 @@
 package com.livraison.livreur.dto;
 
-// Livreur
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
@@ -12,6 +10,13 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CreateLivreurRequest {
+
+    /**
+     * userId = l'ID de l'utilisateur dans le user-service.
+     * Permet de lier le profil livreur au compte utilisateur.
+     * L'ADMIN le récupère depuis le token ou le fournit manuellement.
+     */
+    private Long userId;
 
     @NotBlank(message = "Le nom est obligatoire")
     private String nom;
