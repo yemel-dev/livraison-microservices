@@ -4,6 +4,30 @@ server:
 spring:
   application:
     name: notification-service
-jwt:
-  secret: ${JWT_SECRET:dev-secret-key-changer-en-production-minimum-32-chars}
-  expiration: 86400000
+
+  # On retire web-application-type: none
+  # car on a maintenant des endpoints REST
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      # Le producer envoie des String (JSON)
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+# Configuration Swagger UI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+
+logging:
+  level:
+    com.livraison.notification: DEBUG
+    org.springframework.kafka: INFO
