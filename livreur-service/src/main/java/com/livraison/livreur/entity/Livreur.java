@@ -1,6 +1,5 @@
 package com.livraison.livreur.entity;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -20,6 +19,14 @@ public class Livreur {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /**
+     * userId = l'ID de l'utilisateur dans le user-service (table users).
+     * Permet de faire le lien entre le compte utilisateur et le profil livreur.
+     * Injecté par le Gateway via le header X-User-Id.
+     */
+    @Column(nullable = true)
+    private Long userId;
 
     @NotBlank(message = "Le nom est obligatoire")
     @Column(nullable = false)
@@ -42,11 +49,9 @@ public class Livreur {
     @Builder.Default
     private boolean actif = true;
 
-    // Un livreur a plusieurs livraisons
     @OneToMany(mappedBy = "livreur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Livraison> livraisons;
 
     public Long getId() { return id; }
     public boolean isActif() { return actif; }
-
 }

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
+import java.util.List;
 
 /**
  * Filtre Zero Trust — Double barrière de sécurité.
@@ -18,11 +18,6 @@ import java.io.IOException;
  * Ce filtre vérifie que ces headers sont bien présents avant d'autoriser la requête.
  * Même si la requête vient d'un service interne, elle DOIT avoir ces headers.
  */
-
-/** en gros :   c'est un filtre HTTP (OncePerRequestFilter) qui vérifie que chaque
- * requête contient bien les headers X-User-Id et X-User-Role. Si ces headers sont absents,
- *il renvoie immédiatement un HTTP 401 sans même aller dans le controller
- */
 @Component
 @Slf4j
 public class ZeroTrustFilter extends OncePerRequestFilter {
@@ -30,23 +25,35 @@ public class ZeroTrustFilter extends OncePerRequestFilter {
     public static final String HEADER_USER_ID   = "X-User-Id";
     public static final String HEADER_USER_ROLE = "X-User-Role";
 
+    // Chemins publics — pas besoin de token JWT
+    private static final List<String> PUBLIC_PATHS = List.of(
+            "/actuator",
+            "/swagger-ui",
+            "/v3/api-docs",
+            "/swagger-resources",
+            "/webjars"
+    );
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
 
-        String userId   = request.getHeader(HEADER_USER_ID);
-        String userRole = request.getHeader(HEADER_USER_ROLE);
+        String uri = request.getRequestURI();
 
-        // Actuator / health check : on laisse passer sans vérification
-        if (request.getRequestURI().startsWith("/actuator")) {
+        // Laisser passer les chemins publics sans vérification
+        if (isPublicPath(uri)) {
+            log.debug("[ZERO TRUST] Chemin public autorisé sans token : {}", uri);
             chain.doFilter(request, response);
             return;
         }
 
+        String userId   = request.getHeader(HEADER_USER_ID);
+        String userRole = request.getHeader(HEADER_USER_ROLE);
+
         if (userId == null || userRole == null) {
             log.warn("[ZERO TRUST] Requête refusée — headers manquants | URI={} | IP={}",
-                    request.getRequestURI(), request.getRemoteAddr());
+                    uri, request.getRemoteAddr());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write(
@@ -56,8 +63,12 @@ public class ZeroTrustFilter extends OncePerRequestFilter {
         }
 
         log.debug("[ZERO TRUST] Requête autorisée | userId={} | role={} | URI={}",
-                userId, userRole, request.getRequestURI());
+                userId, userRole, uri);
 
         chain.doFilter(request, response);
+    }
+
+    private boolean isPublicPath(String uri) {
+        return PUBLIC_PATHS.stream().anyMatch(uri::startsWith);
     }
 }

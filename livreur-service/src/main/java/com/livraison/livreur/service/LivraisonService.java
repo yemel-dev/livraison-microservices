@@ -13,6 +13,7 @@ import com.livraison.livreur.kafka.ColisStatusChangedEvent;
 import com.livraison.livreur.kafka.KafkaProducerService;
 import com.livraison.livreur.kafka.LivraisonDoneEvent;
 import com.livraison.livreur.repository.LivraisonRepository;
+import com.livraison.livreur.repository.LivreurRepository;
 import com.livraison.livreur.security.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +32,13 @@ import java.util.stream.Collectors;
 public class LivraisonService {
 
     private final LivraisonRepository livraisonRepository;
-    private final LivreurService livreurService;
+    private final LivreurService      livreurService;
+    private final LivreurRepository   livreurRepository;
     private final KafkaProducerService kafkaProducerService;
 
-    //  Assigner un colis à un livreur (ADMIN) ─
-
+    // -------------------------------------------------------------------------
+    // Assigner un colis à un livreur (ADMIN)
+    // -------------------------------------------------------------------------
     public LivraisonResponse assignerColis(AssignerLivraisonRequest request) {
         Livreur livreur = livreurService.findLivreurOuErreur(request.getLivreurId());
 
@@ -54,17 +57,16 @@ public class LivraisonService {
         Livraison saved = livraisonRepository.save(livraison);
         log.info("[LIVRAISON] Colis {} assigné au livreur id={}", request.getNumeroSuivi(), livreur.getId());
 
-        // Publier le changement de statut sur Kafka → Notification Service
         publierChangementStatut(request.getNumeroSuivi(), StatutColis.EN_ATTENTE, StatutColis.ENLEVE);
 
         return toResponse(saved);
     }
 
-    //  Tournée du jour d'un livreur ─
-
+    // -------------------------------------------------------------------------
+    // Tournée du jour d'un livreur
+    // -------------------------------------------------------------------------
     @Transactional(readOnly = true)
     public List<LivraisonResponse> getTourneeJour(Long livreurId) {
-        // Zero Trust : un livreur ne peut voir que SA tournée
         verifierAccesTournee(livreurId);
 
         LocalDateTime debut = LocalDate.now().atStartOfDay();
@@ -76,8 +78,9 @@ public class LivraisonService {
                 .collect(Collectors.toList());
     }
 
-    //  Toutes les livraisons d'un livreur ─
-
+    // -------------------------------------------------------------------------
+    // Toutes les livraisons d'un livreur
+    // -------------------------------------------------------------------------
     @Transactional(readOnly = true)
     public List<LivraisonResponse> getLivraisonsLivreur(Long livreurId) {
         verifierAccesTournee(livreurId);
@@ -87,8 +90,9 @@ public class LivraisonService {
                 .collect(Collectors.toList());
     }
 
-    //  Scan — Prise en charge (ENLEVÉE) ─
-
+    // -------------------------------------------------------------------------
+    // Scan — Prise en charge
+    // -------------------------------------------------------------------------
     public LivraisonResponse scannerPriseEnCharge(Long livraisonId, Long livreurId) {
         Livraison livraison = findEtVerifierPropriete(livraisonId, livreurId);
 
@@ -98,18 +102,18 @@ public class LivraisonService {
                             "Statut actuel : " + livraison.getStatut());
         }
 
-        StatutColis ancienStatut = StatutColis.EN_ATTENTE;
         livraison.setStatut(StatutLivraison.ENLEVEE);
         Livraison saved = livraisonRepository.save(livraison);
 
         log.info("[LIVRAISON] Colis {} pris en charge par livreur id={}", livraison.getNumeroSuivi(), livreurId);
-        publierChangementStatut(livraison.getNumeroSuivi(), ancienStatut, StatutColis.ENLEVE);
+        publierChangementStatut(livraison.getNumeroSuivi(), StatutColis.EN_ATTENTE, StatutColis.ENLEVE);
 
         return toResponse(saved);
     }
 
-    //  Mise à jour en transit
-
+    // -------------------------------------------------------------------------
+    // Mise à jour en transit
+    // -------------------------------------------------------------------------
     public LivraisonResponse mettreEnTransit(Long livraisonId, Long livreurId) {
         Livraison livraison = findEtVerifierPropriete(livraisonId, livreurId);
 
@@ -128,8 +132,9 @@ public class LivraisonService {
         return toResponse(saved);
     }
 
-    //  Confirmation livraison réussie
-
+    // -------------------------------------------------------------------------
+    // Confirmation livraison réussie
+    // -------------------------------------------------------------------------
     public LivraisonResponse confirmerLivraison(Long livraisonId, Long livreurId) {
         Livraison livraison = findEtVerifierPropriete(livraisonId, livreurId);
 
@@ -142,7 +147,6 @@ public class LivraisonService {
 
         log.info("[LIVRAISON] Livraison {} confirmée par livreur id={}", livraison.getNumeroSuivi(), livreurId);
 
-        // Publier livraison.done → Notification Service (email confirmation)
         LivraisonDoneEvent doneEvent = LivraisonDoneEvent.builder()
                 .numeroSuivi(livraison.getNumeroSuivi())
                 .livreurId(livreurId)
@@ -151,14 +155,14 @@ public class LivraisonService {
                 .build();
         kafkaProducerService.publierLivraisonDone(doneEvent);
 
-        // Publier colis.status_changed aussi
         publierChangementStatut(livraison.getNumeroSuivi(), StatutColis.EN_LIVRAISON, StatutColis.LIVRE);
 
         return toResponse(saved);
     }
 
-    //  Enregistrement d'un échec ─
-
+    // -------------------------------------------------------------------------
+    // Enregistrement d'un échec
+    // -------------------------------------------------------------------------
     public LivraisonResponse enregistrerEchec(Long livraisonId, Long livreurId, EchecRequest request) {
         Livraison livraison = findEtVerifierPropriete(livraisonId, livreurId);
 
@@ -175,8 +179,9 @@ public class LivraisonService {
         return toResponse(saved);
     }
 
-    //  Détail d'une livraison
-
+    // -------------------------------------------------------------------------
+    // Détail d'une livraison
+    // -------------------------------------------------------------------------
     @Transactional(readOnly = true)
     public LivraisonResponse getLivraison(Long livraisonId) {
         Livraison livraison = livraisonRepository.findById(livraisonId)
@@ -184,38 +189,52 @@ public class LivraisonService {
         return toResponse(livraison);
     }
 
-    //  Zero Trust : vérification que la livraison appartient au livreur
-
+    // -------------------------------------------------------------------------
+    // Zero Trust : vérification propriété de la livraison
+    // Compare le userId du token avec le userId stocké dans le profil livreur
+    // -------------------------------------------------------------------------
     private Livraison findEtVerifierPropriete(Long livraisonId, Long livreurId) {
         Livraison livraison = livraisonRepository.findById(livraisonId)
                 .orElseThrow(() -> new ResourceNotFoundException("Livraison non trouvée : " + livraisonId));
 
-        // Zero Trust interne : seul le livreur assigné peut agir
-        if (!livraison.getLivreur().getId().equals(livreurId)) {
-            log.warn("[ZERO TRUST] Tentative d'accès non autorisé — livreurId={} vs assigné={}",
-                    livreurId, livraison.getLivreur().getId());
+        if (SecurityContext.isAdmin()) return livraison;
+
+        // Récupérer le userId du token JWT (injecté par le Gateway)
+        Long currentUserId = SecurityContext.getCurrentUserId();
+
+        // Récupérer le profil livreur et vérifier son userId
+        Livreur livreur = livraison.getLivreur();
+        if (currentUserId == null || !currentUserId.equals(livreur.getUserId())) {
+            log.warn("[ZERO TRUST] Accès non autorisé — currentUserId={} vs livreur.userId={}",
+                    currentUserId, livreur.getUserId());
             throw new AccessDeniedException(
                     "Accès refusé : vous n'êtes pas assigné à cette livraison");
         }
         return livraison;
     }
 
-    /**
-     * Zero Trust : un livreur ne peut consulter que SA tournée.
-     * Un ADMIN peut tout voir.
-     */
+    // -------------------------------------------------------------------------
+    // Zero Trust : vérification accès tournée
+    // -------------------------------------------------------------------------
     private void verifierAccesTournee(Long livreurId) {
         if (SecurityContext.isAdmin()) return;
 
         Long currentUserId = SecurityContext.getCurrentUserId();
-        if (currentUserId == null || !currentUserId.equals(livreurId)) {
+
+        // Trouver le profil livreur correspondant au userId du token
+        Livreur livreur = livreurRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new AccessDeniedException(
+                        "Aucun profil livreur trouvé pour cet utilisateur"));
+
+        if (!livreur.getId().equals(livreurId)) {
             throw new AccessDeniedException(
                     "Accès refusé : vous ne pouvez consulter que votre propre tournée");
         }
     }
 
-    //  Kafka helper
-
+    // -------------------------------------------------------------------------
+    // Kafka helper
+    // -------------------------------------------------------------------------
     private void publierChangementStatut(String numeroSuivi, StatutColis ancien, StatutColis nouveau) {
         ColisStatusChangedEvent event = ColisStatusChangedEvent.builder()
                 .numeroSuivi(numeroSuivi)
@@ -226,8 +245,9 @@ public class LivraisonService {
         kafkaProducerService.publierColisStatusChanged(event);
     }
 
-    //  Mapper entity → DTO ─
-
+    // -------------------------------------------------------------------------
+    // Mapper entity → DTO
+    // -------------------------------------------------------------------------
     private LivraisonResponse toResponse(Livraison l) {
         return LivraisonResponse.builder()
                 .id(l.getId())
