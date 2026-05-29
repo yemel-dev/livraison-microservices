@@ -19,22 +19,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-/**
- * Contrôleur REST de test uniquement.
- * Permet de simuler les événements des autres microservices
- * via Swagger UI sans avoir besoin de Postman.
- *
- * Flux : Swagger UI → POST /api/test/...
- *        → KafkaProducerService publie sur le topic
- *        → KafkaConsumer reçoit et traite
- *        → EmailService simule l'email dans les logs
- */
 @RestController
 @RequestMapping("/api/test")
 @Tag(
     name = "Test des événements Kafka",
-    description = "Endpoints de test pour simuler les événements " +
-                  "des autres microservices et tester le flux complet Kafka"
+    description = "Endpoints de test pour simuler les événements des autres microservices"
 )
 public class TestController {
 
@@ -44,8 +33,7 @@ public class TestController {
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public TestController(KafkaProducerService kafkaProducerService,
-                          ObjectMapper objectMapper) {
+    public TestController(KafkaProducerService kafkaProducerService, ObjectMapper objectMapper) {
         this.kafkaProducerService = kafkaProducerService;
         this.objectMapper = objectMapper;
     }
@@ -57,19 +45,21 @@ public class TestController {
     @PostMapping("/colis-created")
     @Operation(
         summary = "Simuler la création d'un colis",
-        description = "Publie un événement sur le topic Kafka 'colis-created'. " +
-                      "Le KafkaConsumer va recevoir le message et simuler " +
-                      "l'envoi de 2 emails : un à l'expéditeur et un au destinataire.",
+        description = "Publie un événement sur le topic Kafka 'colis.created'. " +
+                      "Le KafkaConsumer simule l'envoi de 2 emails (expéditeur + destinataire).",
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             content = @Content(
                 schema = @Schema(implementation = ColisCreatedEvent.class),
                 examples = @ExampleObject(
                     name = "Exemple",
-                    value = "{\"colisId\":\"COL-001\"," +
-                            "\"expediteurEmail\":\"jean@gmail.com\"," +
-                            "\"destinataireEmail\":\"marie@gmail.com\"," +
-                            "\"description\":\"Telephone Samsung\"," +
-                            "\"statut\":\"CREE\"}"
+                    value = "{\"colisId\":1," +
+                            "\"numeroSuivi\":\"COL-20260529-A3F7K\"," +
+                            "\"expediteurNom\":\"Alice Dupont\"," +
+                            "\"expediteurEmail\":\"alice@gmail.com\"," +
+                            "\"destinataireNom\":\"Bob Martin\"," +
+                            "\"destinataireEmail\":\"bob@gmail.com\"," +
+                            "\"optionService\":\"EXPRESS\"," +
+                            "\"delaiLivraisonJours\":2}"
                 )
             )
         ),
@@ -81,19 +71,16 @@ public class TestController {
     public ResponseEntity<Map<String, String>> simulerColisCreated(
             @RequestBody ColisCreatedEvent event) {
         try {
-            // Convertit l'objet Java en JSON pour Kafka
             String json = objectMapper.writeValueAsString(event);
             kafkaProducerService.publierColisCreated(json);
-
-            log.info("✅ Événement colis-created publié pour : {}", event.getColisId());
-
+            log.info("✅ Événement colis.created publié pour colisId={}", event.getColisId());
             return ResponseEntity.ok(Map.of(
                 "status", "SUCCESS",
-                "message", "Événement publié sur le topic colis-created",
-                "colisId", event.getColisId()
+                "message", "Événement publié sur le topic colis.created",
+                "colisId", String.valueOf(event.getColisId())
             ));
         } catch (Exception e) {
-            log.error("❌ Erreur publication colis-created : {}", e.getMessage());
+            log.error("❌ Erreur publication colis.created : {}", e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of(
                 "status", "ERROR",
                 "message", e.getMessage()
@@ -108,19 +95,18 @@ public class TestController {
     @PostMapping("/colis-status-changed")
     @Operation(
         summary = "Simuler un changement de statut de colis",
-        description = "Publie un événement sur le topic Kafka 'colis-status-changed'. " +
-                      "Le KafkaConsumer va simuler l'envoi de 2 emails de notification " +
-                      "de changement de statut : un à l'expéditeur et un au destinataire.",
+        description = "Publie un événement sur le topic Kafka 'colis.status_changed'.",
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             content = @Content(
                 schema = @Schema(implementation = ColisStatusChangedEvent.class),
                 examples = @ExampleObject(
                     name = "Exemple",
-                    value = "{\"colisId\":\"COL-001\"," +
-                            "\"expediteurEmail\":\"jean@gmail.com\"," +
-                            "\"destinataireEmail\":\"marie@gmail.com\"," +
-                            "\"ancienStatut\":\"CREE\"," +
-                            "\"nouveauStatut\":\"EN_TRANSIT\"}"
+                    value = "{\"colisId\":1," +
+                            "\"numeroSuivi\":\"COL-20260529-A3F7K\"," +
+                            "\"ancienStatut\":\"EN_ATTENTE\"," +
+                            "\"nouveauStatut\":\"ENLEVE\"," +
+                            "\"destinataireEmail\":\"bob@gmail.com\"," +
+                            "\"destinataireNom\":\"Bob Martin\"}"
                 )
             )
         ),
@@ -134,17 +120,15 @@ public class TestController {
         try {
             String json = objectMapper.writeValueAsString(event);
             kafkaProducerService.publierColisStatusChanged(json);
-
-            log.info("✅ Événement colis-status-changed publié pour : {}", event.getColisId());
-
+            log.info("✅ Événement colis.status_changed publié pour colisId={}", event.getColisId());
             return ResponseEntity.ok(Map.of(
                 "status", "SUCCESS",
-                "message", "Événement publié sur le topic colis-status-changed",
-                "colisId", event.getColisId(),
+                "message", "Événement publié sur le topic colis.status_changed",
+                "colisId", String.valueOf(event.getColisId()),
                 "nouveauStatut", event.getNouveauStatut()
             ));
         } catch (Exception e) {
-            log.error("❌ Erreur publication colis-status-changed : {}", e.getMessage());
+            log.error("❌ Erreur publication colis.status_changed : {}", e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of(
                 "status", "ERROR",
                 "message", e.getMessage()
@@ -159,19 +143,17 @@ public class TestController {
     @PostMapping("/livraison-done")
     @Operation(
         summary = "Simuler une livraison terminée",
-        description = "Publie un événement sur le topic Kafka 'livraison-done'. " +
-                      "Le KafkaConsumer va simuler l'envoi de 2 emails de confirmation " +
-                      "finale : un à l'expéditeur et un au destinataire.",
+        description = "Publie un événement sur le topic Kafka 'livraison.done'.",
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             content = @Content(
                 schema = @Schema(implementation = LivraisonDoneEvent.class),
                 examples = @ExampleObject(
                     name = "Exemple",
-                    value = "{\"colisId\":\"COL-001\"," +
-                            "\"expediteurEmail\":\"jean@gmail.com\"," +
-                            "\"destinataireEmail\":\"marie@gmail.com\"," +
+                    value = "{\"numeroSuivi\":\"COL-20260529-A3F7K\"," +
+                            "\"livreurId\":1," +
                             "\"livreurNom\":\"Paul Dupont\"," +
-                            "\"dateLivraison\":\"2026-05-25\"}"
+                            "\"dateLivraison\":\"2026-05-29T18:00:00\"," +
+                            "\"eventType\":\"LIVRAISON_CONFIRMEE\"}"
                 )
             )
         ),
@@ -185,17 +167,15 @@ public class TestController {
         try {
             String json = objectMapper.writeValueAsString(event);
             kafkaProducerService.publierLivraisonDone(json);
-
-            log.info("✅ Événement livraison-done publié pour : {}", event.getColisId());
-
+            log.info("✅ Événement livraison.done publié pour numeroSuivi={}", event.getNumeroSuivi());
             return ResponseEntity.ok(Map.of(
                 "status", "SUCCESS",
-                "message", "Événement publié sur le topic livraison-done",
-                "colisId", event.getColisId(),
+                "message", "Événement publié sur le topic livraison.done",
+                "numeroSuivi", event.getNumeroSuivi(),
                 "livreurNom", event.getLivreurNom()
             ));
         } catch (Exception e) {
-            log.error("❌ Erreur publication livraison-done : {}", e.getMessage());
+            log.error("❌ Erreur publication livraison.done : {}", e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of(
                 "status", "ERROR",
                 "message", e.getMessage()

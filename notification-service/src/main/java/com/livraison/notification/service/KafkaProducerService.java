@@ -10,14 +10,13 @@ import org.springframework.stereotype.Service;
  * Service qui publie des messages sur les topics Kafka.
  * Utilisé uniquement par le TestController pour simuler
  * les événements des autres microservices.
+ * Topics alignés avec ceux publiés par colis-service et livreur-service.
  */
 @Service
 public class KafkaProducerService {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaProducerService.class);
 
-    // KafkaTemplate : outil Spring pour envoyer des messages Kafka
-    // Spring le crée automatiquement grâce à la config dans application.yml
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Autowired
@@ -25,27 +24,18 @@ public class KafkaProducerService {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    // ─────────────────────────────────────────────────
-    // Publie un message sur le topic "colis-created"
-    // ─────────────────────────────────────────────────
     public void publierColisCreated(String messageJson) {
-        log.info("📤 Publication sur colis-created : {}", messageJson);
-        kafkaTemplate.send("colis-created", messageJson);
+        log.info("📤 Publication sur colis.created : {}", messageJson);
+        kafkaTemplate.send("colis.created", messageJson);
     }
 
-    // ─────────────────────────────────────────────────
-    // Publie un message sur le topic "colis-status-changed"
-    // ─────────────────────────────────────────────────
     public void publierColisStatusChanged(String messageJson) {
-        log.info("📤 Publication sur colis-status-changed : {}", messageJson);
-        kafkaTemplate.send("colis-status-changed", messageJson);
+        log.info("📤 Publication sur colis.status_changed : {}", messageJson);
+        kafkaTemplate.send("colis.status_changed", messageJson);
     }
 
-    // ─────────────────────────────────────────────────
-    // Publie un message sur le topic "livraison-done"
-    // ─────────────────────────────────────────────────
     public void publierLivraisonDone(String messageJson) {
-        log.info("📤 Publication sur livraison-done : {}", messageJson);
-        kafkaTemplate.send("livraison-done", messageJson);
+        log.info("📤 Publication sur livraison.done : {}", messageJson);
+        kafkaTemplate.send("livraison.done", messageJson);
     }
 }
