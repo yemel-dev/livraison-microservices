@@ -15,5 +15,5 @@ spring:
     show-sql: true
 
 jwt:
-  secret: ${JWT_SECRET:votre-cle-secrete-jwt-a-changer-en-production}
+  secret: dev-secret-key-changer-en-production-minimum-32-chars
   expiration: 86400000

@@ -66,7 +66,8 @@ public class JwtUtil {
     // C'est le User Service qui place l'userId dans le claim "sub" à la création
     // -------------------------------------------------------------------------
     public String extractUserId(String token) {
-        return extractAllClaims(token).getSubject();
+    return extractAllClaims(token).get("userId", Long.class).toString();
+
     }
 
     // -------------------------------------------------------------------------
