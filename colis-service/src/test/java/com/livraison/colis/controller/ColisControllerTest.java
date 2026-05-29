@@ -107,7 +107,7 @@ class ColisControllerTest {
 
             mockMvc.perform(post("/api/colis")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "ROLE_CLIENT")
+                            .header("X-User-Role", "CLIENT")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(requestDTO)))
                     .andExpect(status().isCreated())
@@ -119,7 +119,7 @@ class ColisControllerTest {
         @DisplayName("sans header X-User-Id → 401 Unauthorized")
         void withoutUserIdHeader_shouldReturn401() throws Exception {
             mockMvc.perform(post("/api/colis")
-                            .header("X-User-Role", "ROLE_CLIENT")
+                            .header("X-User-Role", "CLIENT")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(requestDTO)))
                     .andExpect(status().isUnauthorized());
@@ -139,7 +139,7 @@ class ColisControllerTest {
 
             mockMvc.perform(post("/api/colis")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "ROLE_CLIENT")
+                            .header("X-User-Role", "CLIENT")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(invalid)))
                     .andExpect(status().isBadRequest())
@@ -161,7 +161,7 @@ class ColisControllerTest {
 
             mockMvc.perform(post("/api/colis")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "ROLE_CLIENT")
+                            .header("X-User-Role", "CLIENT")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(invalid)))
                     .andExpect(status().isBadRequest());
@@ -177,11 +177,11 @@ class ColisControllerTest {
         @Test
         @DisplayName("colis existant avec bon userId → 200 OK")
         void existingColis_shouldReturn200() throws Exception {
-            when(colisService.getColisById(1L, 1L, "ROLE_CLIENT")).thenReturn(responseDTO);
+            when(colisService.getColisById(1L, 1L, "CLIENT")).thenReturn(responseDTO);
 
             mockMvc.perform(get("/api/colis/1")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "ROLE_CLIENT"))
+                            .header("X-User-Role", "CLIENT"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.numeroSuivi").value("COL-20240315-A3F7K"));
@@ -195,7 +195,7 @@ class ColisControllerTest {
 
             mockMvc.perform(get("/api/colis/99")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "ROLE_CLIENT"))
+                            .header("X-User-Role", "CLIENT"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.error").value("Colis introuvable"));
         }
@@ -210,11 +210,11 @@ class ColisControllerTest {
         @Test
         @DisplayName("liste des colis → 200 OK")
         void shouldReturnListOf200() throws Exception {
-            when(colisService.getAllColis(1L, "ROLE_CLIENT")).thenReturn(List.of(responseDTO));
+            when(colisService.getAllColis(1L, "CLIENT")).thenReturn(List.of(responseDTO));
 
             mockMvc.perform(get("/api/colis")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "ROLE_CLIENT"))
+                            .header("X-User-Role", "CLIENT"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$[0].numeroSuivi").value("COL-20240315-A3F7K"));
@@ -235,12 +235,12 @@ class ColisControllerTest {
                     .statut(StatutColis.ENLEVE)
                     .build();
 
-            when(colisService.updateStatut(eq(1L), eq(StatutColis.ENLEVE), eq(1L), eq("ROLE_LIVREUR")))
+            when(colisService.updateStatut(eq(1L), eq(StatutColis.ENLEVE), eq(1L), eq("LIVREUR")))
                     .thenReturn(updated);
 
             mockMvc.perform(patch("/api/colis/1/statut")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "ROLE_LIVREUR")
+                            .header("X-User-Role", "LIVREUR")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(new UpdateStatutDTO(StatutColis.ENLEVE))))
                     .andExpect(status().isOk())
@@ -255,7 +255,7 @@ class ColisControllerTest {
 
             mockMvc.perform(patch("/api/colis/1/statut")
                             .header("X-User-Id", "1")
-                            .header("X-User-Role", "ROLE_ADMIN")
+                            .header("X-User-Role", "ADMIN")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(new UpdateStatutDTO(StatutColis.LIVRE))))
                     .andExpect(status().isBadRequest())

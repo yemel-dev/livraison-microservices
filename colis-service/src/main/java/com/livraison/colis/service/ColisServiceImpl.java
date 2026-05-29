@@ -41,8 +41,8 @@ public class ColisServiceImpl implements ColisService {
     private final ColisKafkaProducer kafkaProducer;
 
     private static final String TRACKING_PREFIX = "COL";
-    private static final String ROLE_ADMIN      = "ROLE_ADMIN";
-    private static final String ROLE_LIVREUR    = "ROLE_LIVREUR";
+    private static final String ROLE_ADMIN      = "ADMIN";
+    private static final String ROLE_LIVREUR    = "LIVREUR";
     private static final int    MAX_RETRY_SUIVI = 5;
 
     // ─── Création ────────────────────────────────────────────────────────────

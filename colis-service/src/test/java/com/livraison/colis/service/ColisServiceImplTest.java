@@ -182,7 +182,7 @@ class ColisServiceImplTest {
             when(colisMapper.toDTO(any())).thenReturn(responseDTO);
 
             assertThatNoException().isThrownBy(() ->
-                colisService.updateStatut(1L, to, 1L, "ROLE_ADMIN")
+                colisService.updateStatut(1L, to, 1L, "ADMIN")
             );
             verify(kafkaProducer).publishStatusChanged(any());
         }
@@ -221,7 +221,7 @@ class ColisServiceImplTest {
             when(colisRepository.findById(1L)).thenReturn(Optional.of(colisEnAttente));
 
             assertThatThrownBy(() ->
-                colisService.updateStatut(1L, to, 1L, "ROLE_ADMIN")
+                colisService.updateStatut(1L, to, 1L, "ADMIN")
             ).isInstanceOf(InvalidStatutTransitionException.class);
 
             verify(kafkaProducer, never()).publishStatusChanged(any());
@@ -275,7 +275,7 @@ class ColisServiceImplTest {
             when(colisRepository.findById(1L)).thenReturn(Optional.of(colisEnAttente));
 
             assertThatThrownBy(() ->
-                colisService.getColisById(1L, 99L, "ROLE_CLIENT")
+                colisService.getColisById(1L, 99L, "CLIENT")
             ).isInstanceOf(AccessDeniedException.class);
         }
 
@@ -286,7 +286,7 @@ class ColisServiceImplTest {
             when(colisMapper.toDTO(any())).thenReturn(responseDTO);
 
             assertThatNoException().isThrownBy(() ->
-                colisService.getColisById(1L, 99L, "ROLE_ADMIN")
+                colisService.getColisById(1L, 99L, "ADMIN")
             );
         }
 
@@ -296,7 +296,7 @@ class ColisServiceImplTest {
             when(colisRepository.findByCreatedByUserId(1L)).thenReturn(List.of(colisEnAttente));
             when(colisMapper.toDTO(any())).thenReturn(responseDTO);
 
-            List<ColisResponseDTO> result = colisService.getAllColis(1L, "ROLE_CLIENT");
+            List<ColisResponseDTO> result = colisService.getAllColis(1L, "CLIENT");
 
             assertThat(result).hasSize(1);
             verify(colisRepository).findByCreatedByUserId(1L);
@@ -309,7 +309,7 @@ class ColisServiceImplTest {
             when(colisRepository.findAll()).thenReturn(List.of(colisEnAttente));
             when(colisMapper.toDTO(any())).thenReturn(responseDTO);
 
-            colisService.getAllColis(1L, "ROLE_ADMIN");
+            colisService.getAllColis(1L, "ADMIN");
 
             verify(colisRepository).findAll();
             verify(colisRepository, never()).findByCreatedByUserId(anyLong());
@@ -328,7 +328,7 @@ class ColisServiceImplTest {
             when(colisRepository.findById(1L)).thenReturn(Optional.of(colisEnAttente));
 
             assertThatNoException().isThrownBy(() ->
-                colisService.deleteColis(1L, 1L, "ROLE_ADMIN")
+                colisService.deleteColis(1L, 1L, "ADMIN")
             );
             verify(colisRepository).delete(colisEnAttente);
         }
@@ -340,7 +340,7 @@ class ColisServiceImplTest {
             when(colisRepository.findById(1L)).thenReturn(Optional.of(colisEnAttente));
 
             assertThatThrownBy(() ->
-                colisService.deleteColis(1L, 1L, "ROLE_ADMIN")
+                colisService.deleteColis(1L, 1L, "ADMIN")
             ).isInstanceOf(IllegalStateException.class);
 
             verify(colisRepository, never()).delete(any());
@@ -352,7 +352,7 @@ class ColisServiceImplTest {
             when(colisRepository.findById(1L)).thenReturn(Optional.of(colisEnAttente));
 
             assertThatThrownBy(() ->
-                colisService.deleteColis(1L, 1L, "ROLE_CLIENT")
+                colisService.deleteColis(1L, 1L, "CLIENT")
             ).isInstanceOf(AccessDeniedException.class);
 
             verify(colisRepository, never()).delete(any());
@@ -364,7 +364,7 @@ class ColisServiceImplTest {
             when(colisRepository.findById(99L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() ->
-                colisService.deleteColis(99L, 1L, "ROLE_ADMIN")
+                colisService.deleteColis(99L, 1L, "ADMIN")
             ).isInstanceOf(ColisNotFoundException.class);
         }
     }
