@@ -36,4 +36,5 @@ public interface LivraisonRepository extends JpaRepository<Livraison, Long>{
 
     // Vérifier si un livreur est bien assigné à une livraison (Zero Trust)
     boolean existsByIdAndLivreurId(Long livraisonId, Long livreurId);
+    boolean existsByNumeroSuiviAndStatutNot(String numeroSuivi, StatutLivraison statut);
 }

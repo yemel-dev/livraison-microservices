@@ -39,13 +39,22 @@ public class LivraisonService {
     // -------------------------------------------------------------------------
     // Assigner un colis à un livreur (ADMIN)
     // -------------------------------------------------------------------------
-    public LivraisonResponse assignerColis(AssignerLivraisonRequest request) {
-        Livreur livreur = livreurService.findLivreurOuErreur(request.getLivreurId());
+public LivraisonResponse assignerColis(AssignerLivraisonRequest request) {
+    // Vérifier si le colis est déjà assigné et pas en échec
+    boolean dejaAssigne = livraisonRepository.existsByNumeroSuiviAndStatutNot(
+            request.getNumeroSuivi(), StatutLivraison.ECHEC);
+    if (dejaAssigne) {
+        throw new IllegalStateException(
+                "Le colis " + request.getNumeroSuivi() + " est déjà assigné à un livreur");
+    }
 
-        if (!livreur.isActif()) {
-            throw new IllegalStateException(
-                    "Le livreur id=" + request.getLivreurId() + " est désactivé");
-        }
+    Livreur livreur = livreurService.findLivreurOuErreur(request.getLivreurId());
+    if (!livreur.isActif()) {
+        throw new IllegalStateException(
+                "Le livreur id=" + request.getLivreurId() + " est désactivé");
+    }
+    // ... reste du code inchangé
+
 
         Livraison livraison = Livraison.builder()
                 .numeroSuivi(request.getNumeroSuivi())
@@ -267,4 +276,15 @@ kafkaProducerService.publierColisStatusChanged(event);
                 .motifEchec(l.getMotifEchec())
                 .build();
     }
+    public List<LivraisonResponse> getTourneeJourParUserId(Long userId) {
+    Livreur livreur = livreurRepository.findByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("Profil livreur introuvable pour userId=" + userId));
+    return getTourneeJour(livreur.getId());
+}
+
+public List<LivraisonResponse> getLivraisonsParUserId(Long userId) {
+    Livreur livreur = livreurRepository.findByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("Profil livreur introuvable pour userId=" + userId));
+    return getLivraisonsLivreur(livreur.getId());
+}
 }

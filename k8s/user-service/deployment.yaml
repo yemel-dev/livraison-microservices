@@ -50,7 +50,12 @@ spec:
                 secretKeyRef:
                   name: user-service-secret
                   key: jwt-secret
-
+                  
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: user-service-kafka-config
+                  key: SPRING_KAFKA_BOOTSTRAP_SERVERS
           # Variables non sensibles depuis le ConfigMap
           envFrom:
             - configMapRef:

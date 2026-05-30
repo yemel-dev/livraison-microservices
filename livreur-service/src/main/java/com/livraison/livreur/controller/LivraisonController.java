@@ -184,6 +184,27 @@ public class LivraisonController {
         return ResponseEntity.ok(livraisonService.enregistrerEchec(id, livreurId, request));
     }
 
+
+// -------------------------------------------------------------------------
+// GET /api/livreurs/me/tournee
+// -------------------------------------------------------------------------
+@GetMapping("/api/livreurs/me/tournee")
+@Operation(summary = "Ma tournée du jour", description = "Retourne la tournée du livreur connecté en utilisant son userId.")
+public ResponseEntity<List<LivraisonResponse>> getMaTournee() {
+    Long userId = SecurityContext.getCurrentUserId();
+    return ResponseEntity.ok(livraisonService.getTourneeJourParUserId(userId));
+}
+
+// -------------------------------------------------------------------------
+// GET /api/livreurs/me/livraisons
+// -------------------------------------------------------------------------
+@GetMapping("/api/livreurs/me/livraisons")
+@Operation(summary = "Mon historique", description = "Retourne l'historique du livreur connecté.")
+public ResponseEntity<List<LivraisonResponse>> getMonHistorique() {
+    Long userId = SecurityContext.getCurrentUserId();
+    return ResponseEntity.ok(livraisonService.getLivraisonsParUserId(userId));
+}
+    
     // -------------------------------------------------------------------------
     // Zero Trust RBAC helpers
     // -------------------------------------------------------------------------
