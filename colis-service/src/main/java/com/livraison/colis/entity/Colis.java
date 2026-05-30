@@ -103,6 +103,12 @@ public class Colis {
     @Column(name = "created_by_user_id", nullable = false)
     private Long createdByUserId;
 
+    // ─── Livreur assigné ─────────────────────────────────────────────────────
+@Column(name = "livreur_id")
+private Long livreurId;
+
+@Column(name = "livreur_nom", length = 100)
+private String livreurNom;
     // ─── Méthodes métier ─────────────────────────────────────────────────────
 
     /**

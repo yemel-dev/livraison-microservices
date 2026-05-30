@@ -59,28 +59,30 @@ public class ColisMapper {
      * @param colis l'entité récupérée depuis la BDD
      * @return le DTO à renvoyer au client
      */
-    public ColisResponseDTO toDTO(Colis colis) {
-        return ColisResponseDTO.builder()
-                .id(colis.getId())
-                .numeroSuivi(colis.getNumeroSuivi())
-                .expediteurNom(colis.getExpediteurNom())
-                .expediteurAdresse(colis.getExpediteurAdresse())
-                .expediteurEmail(colis.getExpediteurEmail())
-                .destinataireNom(colis.getDestinataireNom())
-                .destinataireAdresse(colis.getDestinataireAdresse())
-                .destinataireEmail(colis.getDestinataireEmail())
-                .poids(colis.getPoids())
-                .description(colis.getDescription())
-                .optionService(colis.getOptionService())
-                .delaiLivraisonJours(
-                    colis.getOptionService() != null
-                        ? colis.getOptionService().getDelaiJours()
-                        : 0
-                )
-                .statut(colis.getStatut())
-                .dateCreation(colis.getDateCreation())
-                .dateMiseAJour(colis.getDateMiseAJour())
-                .createdByUserId(colis.getCreatedByUserId())
-                .build();
-    }
+public ColisResponseDTO toDTO(Colis colis) {
+    return ColisResponseDTO.builder()
+            .id(colis.getId())
+            .numeroSuivi(colis.getNumeroSuivi())
+            .expediteurNom(colis.getExpediteurNom())
+            .expediteurAdresse(colis.getExpediteurAdresse())
+            .expediteurEmail(colis.getExpediteurEmail())
+            .destinataireNom(colis.getDestinataireNom())
+            .destinataireAdresse(colis.getDestinataireAdresse())
+            .destinataireEmail(colis.getDestinataireEmail())
+            .poids(colis.getPoids())
+            .description(colis.getDescription())
+            .optionService(colis.getOptionService())
+            .delaiLivraisonJours(
+                colis.getOptionService() != null
+                    ? colis.getOptionService().getDelaiJours()
+                    : 0
+            )
+            .statut(colis.getStatut())
+            .dateCreation(colis.getDateCreation())
+            .dateMiseAJour(colis.getDateMiseAJour())
+            .createdByUserId(colis.getCreatedByUserId())
+            .livreurId(colis.getLivreurId())
+            .livreurNom(colis.getLivreurNom())
+            .build();
+}
 }

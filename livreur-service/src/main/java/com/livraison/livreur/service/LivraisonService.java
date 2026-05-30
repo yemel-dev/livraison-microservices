@@ -57,8 +57,15 @@ public class LivraisonService {
         Livraison saved = livraisonRepository.save(livraison);
         log.info("[LIVRAISON] Colis {} assigné au livreur id={}", request.getNumeroSuivi(), livreur.getId());
 
-        publierChangementStatut(request.getNumeroSuivi(), StatutColis.EN_ATTENTE, StatutColis.ENLEVE);
-
+        ColisStatusChangedEvent event = ColisStatusChangedEvent.builder()
+        .numeroSuivi(request.getNumeroSuivi())
+        .ancienStatut(StatutColis.EN_ATTENTE)
+        .nouveauStatut(StatutColis.ENLEVE)
+        .dateChangement(LocalDateTime.now())
+        .livreurId(livreur.getId())
+        .livreurNom(livreur.getNom() + " " + livreur.getPrenom())
+        .build();
+kafkaProducerService.publierColisStatusChanged(event);
         return toResponse(saved);
     }
 

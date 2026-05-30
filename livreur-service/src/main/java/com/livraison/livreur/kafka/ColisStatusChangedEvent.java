@@ -2,15 +2,8 @@ package com.livraison.livreur.kafka;
 
 import com.livraison.livreur.enums.StatutColis;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
-// ── Événement publié à chaque changement de statut d'un colis
-
-/** en gros:
- * l'objet publié sur colis.status_changed à chaque changement de
- * statut. Contient : numeroSuivi, ancienStatut, nouveauStatut, dateChangement.
- */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,4 +15,6 @@ public class ColisStatusChangedEvent {
     private StatutColis nouveauStatut;
     private LocalDateTime dateChangement;
     private String eventType = "CHANGEMENT_STATUT";
+    private Long livreurId;
+    private String livreurNom;
 }
